@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Team Page</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <h2>Team Login</h2>
+  <label>Username:</label>
+  <input type="text" id="username">
+  <label>Password:</label>
+  <input type="password" id="password">
+  <button id="loginBtn">Login</button>
+
+  <div id="teamInfo" style="display:none;">
+    <h3 id="teamName"></h3>
+    <p>Total Points: <span id="teamPoints"></span></p>
+    <h4>Comments</h4>
+    <div id="commentsList"></div>
+  </div>
+</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const loginBtn = document.getElementById("loginBtn");
+loginBtn.addEventListener("click", async () => {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const teamId = new URLSearchParams(window.location.search).get("team");
+
+  const teamRef = doc(db, "teams", teamId);
+  const teamSnap = await getDoc(teamRef);
+
+  if (teamSnap.exists()) {
+    const teamData = teamSnap.data();
+    if (username === teamData.username && password === teamData.password) {
+      document.getElementById("teamInfo").style.display = "block";
+      document.getElementById("teamName").textContent = teamData.name;
+
+      onSnapshot(teamRef, (snap) => {
+        const data = snap.data();
+        document.getElementById("teamPoints").textContent = data.points;
+        const commentsDiv = document.getElementById("commentsList");
+        commentsDiv.innerHTML = "";
+        data.comments.forEach(c => {
+          commentsDiv.innerHTML += `<div class="comment">${c.date}: ${c.text}</div>`;
+        });
+      });
+    } else {
+      alert("Invalid credentials!");
+    }
+  } else {
+    alert("Team not found!");
+  }
+});
+</script>
+</body>
+</html>
