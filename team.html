@@ -1,61 +1,97 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Team Page</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Team Points</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .hidden { display: none; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background: #f4f4f4; }
+    </style>
 </head>
 <body>
-<div class="container">
-  <h2>Team Login</h2>
-  <label>Username:</label>
-  <input type="text" id="username">
-  <label>Password:</label>
-  <input type="password" id="password">
-  <button id="loginBtn">Login</button>
+    <h1>Team Points</h1>
+    <div id="loginForm">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button id="loginBtn">Login</button>
+    </div>
 
-  <div id="teamInfo" style="display:none;">
-    <h3 id="teamName"></h3>
-    <p>Total Points: <span id="teamPoints"></span></p>
-    <h4>Comments</h4>
-    <div id="commentsList"></div>
-  </div>
-</div>
+    <div id="teamData" class="hidden">
+        <h2 id="teamName"></h2>
+        <p>Total Points: <span id="totalPoints"></span></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Change</th>
+                    <th>Reason</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="pointsHistory"></tbody>
+        </table>
+    </div>
 
-<script type="module">
-import { db } from "./firebase.js";
-import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const loginBtn = document.getElementById("loginBtn");
-loginBtn.addEventListener("click", async () => {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const teamId = new URLSearchParams(window.location.search).get("team");
+      const firebaseConfig = {
+  apiKey: "AIzaSyDZypafzXFJp6llDReV3KdwAr1MrcvfZ6M",
+  authDomain: "team-grade.firebaseapp.com",
+  projectId: "team-grade",
+  storageBucket: "team-grade.firebasestorage.app",
+  messagingSenderId: "905391416822",
+  appId: "1:905391416822:web:3acfde98ecdf54b33853d7",
+  measurementId: "G-VJLYTE7MYD"
+};
 
-  const teamRef = doc(db, "teams", teamId);
-  const teamSnap = await getDoc(teamRef);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-  if (teamSnap.exists()) {
-    const teamData = teamSnap.data();
-    if (username === teamData.username && password === teamData.password) {
-      document.getElementById("teamInfo").style.display = "block";
-      document.getElementById("teamName").textContent = teamData.name;
+        document.getElementById("loginBtn").addEventListener("click", async () => {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
 
-      onSnapshot(teamRef, (snap) => {
-        const data = snap.data();
-        document.getElementById("teamPoints").textContent = data.points;
-        const commentsDiv = document.getElementById("commentsList");
-        commentsDiv.innerHTML = "";
-        data.comments.forEach(c => {
-          commentsDiv.innerHTML += `<div class="comment">${c.date}: ${c.text}</div>`;
+            const teamsCol = collection(db, "teams");
+            const q = query(teamsCol, where("username", "==", username), where("password", "==", password));
+            const snapshot = await getDocs(q);
+
+            if (snapshot.empty) {
+                alert("Invalid credentials");
+                return;
+            }
+
+            snapshot.forEach(teamDoc => {
+                const team = teamDoc.data();
+                document.getElementById("loginForm").classList.add("hidden");
+                document.getElementById("teamData").classList.remove("hidden");
+                document.getElementById("teamName").innerText = team.name;
+                document.getElementById("totalPoints").innerText = team.points;
+
+                loadHistory(teamDoc.id);
+            });
         });
-      });
-    } else {
-      alert("Invalid credentials!");
-    }
-  } else {
-    alert("Team not found!");
-  }
-});
-</script>
+
+        async function loadHistory(teamId) {
+            const pointsCol = collection(db, `teams/${teamId}/pointsHistory`);
+            const snapshot = await getDocs(pointsCol);
+            const historyTable = document.getElementById("pointsHistory");
+            historyTable.innerHTML = "";
+            snapshot.forEach(doc => {
+                const entry = doc.data();
+                historyTable.innerHTML += `
+                    <tr>
+                        <td>${entry.change}</td>
+                        <td>${entry.reason}</td>
+                        <td>${new Date(entry.date).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+        }
+    </script>
 </body>
 </html>
