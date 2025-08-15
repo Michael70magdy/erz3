@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <h2>Admin Panel</h2>
+  <label>Team:</label>
+  <select id="teamSelect">
+    <option value="red">Team Red</option>
+    <option value="blue">Team Blue</option>
+  </select>
+
+  <label>Points to Add/Remove:</label>
+  <input type="number" id="pointsInput">
+
+  <label>Comment:</label>
+  <textarea id="commentInput"></textarea>
+
+  <button id="updateBtn">Update Points</button>
+</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { doc, updateDoc, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+document.getElementById("updateBtn").addEventListener("click", async () => {
+  const teamId = document.getElementById("teamSelect").value;
+  const points = Number(document.getElementById("pointsInput").value);
+  const comment = document.getElementById("commentInput").value;
+
+  if (!points || !comment) {
+    alert("Please enter points and a comment.");
+    return;
+  }
+
+  const teamRef = doc(db, "teams", teamId);
+  await updateDoc(teamRef, {
+    points: increment(points),
+    comments: arrayUnion({ text: comment, date: new Date().toISOString() })
+  });
+
+  alert("Points updated!");
+});
+</script>
+</body>
+</html>
