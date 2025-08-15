@@ -1,49 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Panel</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background: #f4f4f4; }
+        input, button { padding: 6px; margin: 4px; }
+    </style>
 </head>
 <body>
-<div class="container">
-  <h2>Admin Panel</h2>
-  <label>Team:</label>
-  <select id="teamSelect">
-    <option value="red">Team Red</option>
-    <option value="blue">Team Blue</option>
-  </select>
+    <h1>Admin Panel</h1>
+    <table id="teamsTable">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Points</th>
+                <th>Change</th>
+                <th>Reason</th>
+                <th>Update</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-  <label>Points to Add/Remove:</label>
-  <input type="number" id="pointsInput">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, updateDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  <label>Comment:</label>
-  <textarea id="commentInput"></textarea>
+      
+      const firebaseConfig = {
+  apiKey: "AIzaSyDZypafzXFJp6llDReV3KdwAr1MrcvfZ6M",
+  authDomain: "team-grade.firebaseapp.com",
+  projectId: "team-grade",
+  storageBucket: "team-grade.firebasestorage.app",
+  messagingSenderId: "905391416822",
+  appId: "1:905391416822:web:3acfde98ecdf54b33853d7",
+  measurementId: "G-VJLYTE7MYD"
+};
 
-  <button id="updateBtn">Update Points</button>
-</div>
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-<script type="module">
-import { db } from "./firebase.js";
-import { doc, updateDoc, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        async function loadTeams() {
+            const teamsCol = collection(db, "teams");
+            const snapshot = await getDocs(teamsCol);
+            const tableBody = document.querySelector("#teamsTable tbody");
+            tableBody.innerHTML = "";
+            snapshot.forEach(teamDoc => {
+                const team = teamDoc.data();
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${team.name}</td>
+                        <td>${team.points}</td>
+                        <td><input type="number" id="change-${teamDoc.id}" placeholder="+/- points"></td>
+                        <td><input type="text" id="reason-${teamDoc.id}" placeholder="Reason"></td>
+                        <td><button onclick="updatePoints('${teamDoc.id}', ${team.points})">Update</button></td>
+                    </tr>
+                `;
+            });
+        }
 
-document.getElementById("updateBtn").addEventListener("click", async () => {
-  const teamId = document.getElementById("teamSelect").value;
-  const points = Number(document.getElementById("pointsInput").value);
-  const comment = document.getElementById("commentInput").value;
+        window.updatePoints = async (id, currentPoints) => {
+            const change = parseInt(document.getElementById(`change-${id}`).value);
+            const reason = document.getElementById(`reason-${id}`).value;
+            if (!change || !reason) {
+                alert("Please enter change and reason");
+                return;
+            }
 
-  if (!points || !comment) {
-    alert("Please enter points and a comment.");
-    return;
-  }
+            const newPoints = currentPoints + change;
+            await updateDoc(doc(db, "teams", id), { points: newPoints });
+            await addDoc(collection(db, `teams/${id}/pointsHistory`), {
+                change: change,
+                reason: reason,
+                date: Date.now()
+            });
 
-  const teamRef = doc(db, "teams", teamId);
-  await updateDoc(teamRef, {
-    points: increment(points),
-    comments: arrayUnion({ text: comment, date: new Date().toISOString() })
-  });
+            loadTeams();
+        };
 
-  alert("Points updated!");
-});
-</script>
+        loadTeams();
+    </script>
 </body>
 </html>
