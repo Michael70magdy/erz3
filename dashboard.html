@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <h2>Teams Dashboard</h2>
+  <div id="teamsList"></div>
+</div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const teamsList = document.getElementById("teamsList");
+
+onSnapshot(collection(db, "teams"), (snapshot) => {
+  teamsList.innerHTML = "";
+  snapshot.forEach((doc) => {
+    const team = doc.data();
+    const div = document.createElement("div");
+    div.innerHTML = `<strong>${team.name}</strong>: ${team.points} points 
+      <button onclick="location.href='03-team.html?team=${doc.id}'">View</button>`;
+    teamsList.appendChild(div);
+  });
+});
+</script>
+</body>
+</html>
