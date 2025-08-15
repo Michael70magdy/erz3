@@ -15,7 +15,15 @@ import { db } from "./firebase.js";
 import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const teamsList = document.getElementById("teamsList");
-
+    const firebaseConfig = {
+  apiKey: "AIzaSyDZypafzXFJp6llDReV3KdwAr1MrcvfZ6M",
+  authDomain: "team-grade.firebaseapp.com",
+  projectId: "team-grade",
+  storageBucket: "team-grade.firebasestorage.app",
+  messagingSenderId: "905391416822",
+  appId: "1:905391416822:web:3acfde98ecdf54b33853d7",
+  measurementId: "G-VJLYTE7MYD"
+};
 onSnapshot(collection(db, "teams"), (snapshot) => {
   teamsList.innerHTML = "";
   snapshot.forEach((doc) => {
