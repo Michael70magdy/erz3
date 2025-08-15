@@ -2,34 +2,62 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Teams & Points</title>
+    <title>Teams Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; }
+        h1 { text-align: center; }
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
         th { background: #f4f4f4; }
-        button { padding: 6px 12px; margin: 4px; }
+        a { text-decoration: none; color: blue; }
     </style>
 </head>
 <body>
-    <h1>Teams & Points</h1>
-
+    <h1>Teams Dashboard</h1>
     <table id="teamsTable">
         <thead>
             <tr>
                 <th>Team</th>
-                <th>Points</th>
-                <th>Actions</th>
+                <th>Total Points</th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
 
     <script type="module">
-        // Firebase SDK imports (V9 modular)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const firebaseConfig = {
+  apiKey: "AIzaSyDZypafzXFJp6llDReV3KdwAr1MrcvfZ6M",
+  authDomain: "team-grade.firebaseapp.com",
+  projectId: "team-grade",
+  storageBucket: "team-grade.firebasestorage.app",
+  messagingSenderId: "905391416822",
+  appId: "1:905391416822:web:3acfde98ecdf54b33853d7",
+  measurementId: "G-VJLYTE7MYD"
+};
+        
 
-        // Your Firebas
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadTeams() {
+            const teamsCol = collection(db, "teams");
+            const snapshot = await getDocs(teamsCol);
+            const tableBody = document.querySelector("#teamsTable tbody");
+            tableBody.innerHTML = "";
+            snapshot.forEach(doc => {
+                const team = doc.data();
+                tableBody.innerHTML += `
+                    <tr>
+                        <td><a href="team.html?id=${doc.id}">${team.name}</a></td>
+                        <td>${team.points}</td>
+                    </tr>
+                `;
+            });
+        }
+        loadTeams();
+    </script>
+</body>
+</html>
